@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.vscode/**'
+      - '.idea/**'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  charity-crowdfunding-python-contracts-validate:
+    name: Run charity-crowdfunding-python-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/charity-crowdfunding-python-contracts-ci.yaml
+
+  charity-crowdfunding-python-contracts-release:
+    name: Run charity-crowdfunding-python-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/charity-crowdfunding-python-contracts-cd.yaml
+    needs: charity-crowdfunding-python-contracts-validate
+
+  charity-crowdfunding-python-frontend-validate:
+    name: Run charity-crowdfunding-python-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/charity-crowdfunding-python-frontend-ci.yaml
+
+  charity-crowdfunding-python-frontend-release:
+    name: Run charity-crowdfunding-python-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/charity-crowdfunding-python-frontend-cd.yaml
+    needs: charity-crowdfunding-python-frontend-validate

@@ -1,0 +1,14 @@
+name: Pull Request validation
+
+on: [pull_request]
+
+
+jobs:
+  charity-crowdfunding-python-contracts-ci:
+    name: Run charity-crowdfunding-python-contracts validation
+    uses: ./.github/workflows/charity-crowdfunding-python-contracts-ci.yaml
+
+  charity-crowdfunding-python-frontend-ci:
+    name: Run charity-crowdfunding-python-frontend validation
+    uses: ./.github/workflows/charity-crowdfunding-python-frontend-ci.yaml
+
