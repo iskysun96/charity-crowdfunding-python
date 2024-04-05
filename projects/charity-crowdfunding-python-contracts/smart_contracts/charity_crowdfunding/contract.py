@@ -34,16 +34,6 @@ class CharityCrowdfunding(ARC4Contract):
     def _authorize_creator(self) -> None:
         assert Global.creator_address == Txn.sender
 
-    @subroutine
-    def _opt_in_asset(self, asset_id: UInt64) -> None:
-        self._authorize_creator()
-
-        itxn.AssetTransfer(
-            xfer_asset=asset_id,
-            asset_receiver=Global.current_application_address,
-            fee=0,
-        ).submit()
-
     @abimethod()
     def bootstrap(
         self,
