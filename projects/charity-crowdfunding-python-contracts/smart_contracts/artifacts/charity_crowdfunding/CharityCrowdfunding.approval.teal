@@ -1,0 +1,595 @@
+#pragma version 10
+
+smart_contracts.charity_crowdfunding.contract.CharityCrowdfunding.approval_program:
+    txn ApplicationID
+    bnz main_entrypoint@2
+    callsub __init__
+
+main_entrypoint@2:
+    // smart_contracts/charity_crowdfunding/contract.py:21
+    // class CharityCrowdfunding(ARC4Contract):
+    txn NumAppArgs
+    bz main_bare_routing@9
+    method "bootstrap(uint64,string,string,uint64,string,string,uint64,string,pay)uint64"
+    method "fund(pay)void"
+    method "claim_fund()uint64"
+    txna ApplicationArgs 0
+    match main_bootstrap_route@4 main_fund_route@5 main_claim_fund_route@6
+    err // reject transaction
+
+main_bootstrap_route@4:
+    // smart_contracts/charity_crowdfunding/contract.py:47
+    // @abimethod()
+    txn OnCompletion
+    !
+    assert // OnCompletion is NoOp
+    txn ApplicationID
+    assert // is not creating
+    // smart_contracts/charity_crowdfunding/contract.py:21
+    // class CharityCrowdfunding(ARC4Contract):
+    txna ApplicationArgs 1
+    btoi
+    txna ApplicationArgs 2
+    extract 2 0
+    txna ApplicationArgs 3
+    extract 2 0
+    txna ApplicationArgs 4
+    btoi
+    txna ApplicationArgs 5
+    extract 2 0
+    txna ApplicationArgs 6
+    extract 2 0
+    txna ApplicationArgs 7
+    btoi
+    txna ApplicationArgs 8
+    extract 2 0
+    txn GroupIndex
+    int 1
+    -
+    dup
+    gtxns TypeEnum
+    int pay
+    ==
+    assert // transaction type is pay
+    // smart_contracts/charity_crowdfunding/contract.py:47
+    // @abimethod()
+    callsub bootstrap
+    itob
+    byte 0x151f7c75
+    swap
+    concat
+    log
+    int 1
+    return
+
+main_fund_route@5:
+    // smart_contracts/charity_crowdfunding/contract.py:89
+    // @abimethod
+    txn OnCompletion
+    !
+    assert // OnCompletion is NoOp
+    txn ApplicationID
+    assert // is not creating
+    // smart_contracts/charity_crowdfunding/contract.py:21
+    // class CharityCrowdfunding(ARC4Contract):
+    txn GroupIndex
+    int 1
+    -
+    dup
+    gtxns TypeEnum
+    int pay
+    ==
+    assert // transaction type is pay
+    // smart_contracts/charity_crowdfunding/contract.py:89
+    // @abimethod
+    callsub fund
+    int 1
+    return
+
+main_claim_fund_route@6:
+    // smart_contracts/charity_crowdfunding/contract.py:116
+    // @abimethod
+    txn OnCompletion
+    !
+    assert // OnCompletion is NoOp
+    txn ApplicationID
+    assert // is not creating
+    callsub claim_fund
+    itob
+    byte 0x151f7c75
+    swap
+    concat
+    log
+    int 1
+    return
+
+main_bare_routing@9:
+    // smart_contracts/charity_crowdfunding/contract.py:21
+    // class CharityCrowdfunding(ARC4Contract):
+    txn OnCompletion
+    switch main_create@10 main_opt_in_to_app@11 main_reject_bare_on_completion@13 main_reject_bare_on_completion@13 main_reject_bare_on_completion@13 main_delete_application@12
+    err // reject transaction
+
+main_create@10:
+    // smart_contracts/charity_crowdfunding/contract.py:21
+    // class CharityCrowdfunding(ARC4Contract):
+    txn ApplicationID
+    !
+    assert // is creating
+    int 1
+    return
+
+main_opt_in_to_app@11:
+    // smart_contracts/charity_crowdfunding/contract.py:85
+    // @baremethod(allow_actions=["OptIn"])
+    txn ApplicationID
+    assert // is not creating
+    // smart_contracts/charity_crowdfunding/contract.py:85-86
+    // @baremethod(allow_actions=["OptIn"])
+    // def opt_in_to_app(self) -> None:
+    callsub opt_in_to_app
+    int 1
+    return
+
+main_delete_application@12:
+    // smart_contracts/charity_crowdfunding/contract.py:132
+    // @baremethod(allow_actions=["DeleteApplication"])
+    txn ApplicationID
+    assert // is not creating
+    // smart_contracts/charity_crowdfunding/contract.py:132-133
+    // @baremethod(allow_actions=["DeleteApplication"])
+    // def delete_application(self) -> None:
+    callsub delete_application
+    int 1
+    return
+
+main_reject_bare_on_completion@13:
+    // smart_contracts/charity_crowdfunding/contract.py:21
+    // class CharityCrowdfunding(ARC4Contract):
+    err // reject transaction
+
+
+// smart_contracts.charity_crowdfunding.contract.CharityCrowdfunding.bootstrap(goal: uint64, detail: bytes, title: bytes, min_donation: uint64, asset_name: bytes, unit_name: bytes, nft_amount: uint64, asset_url: bytes, mbr_pay: uint64) -> uint64:
+bootstrap:
+    // smart_contracts/charity_crowdfunding/contract.py:47-59
+    // @abimethod()
+    // def bootstrap(
+    //     self,
+    //     goal: UInt64,
+    //     detail: String,
+    //     title: String,
+    //     min_donation: UInt64,
+    //     asset_name: String,
+    //     unit_name: String,
+    //     nft_amount: UInt64,
+    //     asset_url: String,
+    //     mbr_pay: gtxn.PaymentTransaction,
+    // ) -> UInt64:
+    proto 9 1
+    // smart_contracts/charity_crowdfunding/contract.py:60
+    // self._authorize_creator()
+    callsub _authorize_creator
+    // smart_contracts/charity_crowdfunding/contract.py:62
+    // assert mbr_pay.amount >= Global.min_balance
+    frame_dig -1
+    gtxns Amount
+    global MinBalance
+    >=
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:63
+    // assert mbr_pay.receiver == Global.current_application_address
+    frame_dig -1
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:64
+    // assert mbr_pay.sender == Global.creator_address
+    frame_dig -1
+    gtxns Sender
+    global CreatorAddress
+    ==
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:66
+    // self.goal = goal
+    byte "goal"
+    frame_dig -9
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:67
+    // self.detail = detail
+    byte "detail"
+    frame_dig -8
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:68
+    // self.title = title
+    byte "title"
+    frame_dig -7
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:69
+    // self.min_donation = min_donation
+    byte "min_donation"
+    frame_dig -6
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:70
+    // self.fund_raised = UInt64(0)
+    byte "fund_raised"
+    int 0
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:71
+    // self.active = UInt64(1)
+    byte "active"
+    int 1
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:73-80
+    // result = itxn.AssetConfig(
+    //     total=nft_amount,
+    //     unit_name=unit_name,
+    //     asset_name=asset_name,
+    //     decimals=0,
+    //     url=asset_url,
+    //     fee=0,
+    // ).submit()
+    itxn_begin
+    // smart_contracts/charity_crowdfunding/contract.py:79
+    // fee=0,
+    int 0
+    itxn_field Fee
+    frame_dig -2
+    itxn_field ConfigAssetURL
+    // smart_contracts/charity_crowdfunding/contract.py:77
+    // decimals=0,
+    int 0
+    itxn_field ConfigAssetDecimals
+    frame_dig -5
+    itxn_field ConfigAssetName
+    frame_dig -4
+    itxn_field ConfigAssetUnitName
+    frame_dig -3
+    itxn_field ConfigAssetTotal
+    // smart_contracts/charity_crowdfunding/contract.py:73
+    // result = itxn.AssetConfig(
+    int acfg
+    itxn_field TypeEnum
+    // smart_contracts/charity_crowdfunding/contract.py:73-80
+    // result = itxn.AssetConfig(
+    //     total=nft_amount,
+    //     unit_name=unit_name,
+    //     asset_name=asset_name,
+    //     decimals=0,
+    //     url=asset_url,
+    //     fee=0,
+    // ).submit()
+    itxn_submit
+    // smart_contracts/charity_crowdfunding/contract.py:82
+    // self.reward_nft_id = result.created_asset.id
+    byte "reward_nft_id"
+    // smart_contracts/charity_crowdfunding/contract.py:73-80
+    // result = itxn.AssetConfig(
+    //     total=nft_amount,
+    //     unit_name=unit_name,
+    //     asset_name=asset_name,
+    //     decimals=0,
+    //     url=asset_url,
+    //     fee=0,
+    // ).submit()
+    itxn CreatedAssetID
+    // smart_contracts/charity_crowdfunding/contract.py:82
+    // self.reward_nft_id = result.created_asset.id
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:83
+    // return self.reward_nft_id
+    int 0
+    byte "reward_nft_id"
+    app_global_get_ex
+    assert // check reward_nft_id exists
+    retsub
+
+
+// smart_contracts.charity_crowdfunding.contract.CharityCrowdfunding._authorize_creator() -> void:
+_authorize_creator:
+    // smart_contracts/charity_crowdfunding/contract.py:33-34
+    // @subroutine
+    // def _authorize_creator(self) -> None:
+    proto 0 0
+    // smart_contracts/charity_crowdfunding/contract.py:35
+    // assert Global.creator_address == Txn.sender
+    global CreatorAddress
+    txn Sender
+    ==
+    assert
+    retsub
+
+
+// smart_contracts.charity_crowdfunding.contract.CharityCrowdfunding.fund(fund_pay: uint64) -> void:
+fund:
+    // smart_contracts/charity_crowdfunding/contract.py:89-90
+    // @abimethod
+    // def fund(self, fund_pay: gtxn.PaymentTransaction) -> None:
+    proto 1 0
+    // smart_contracts/charity_crowdfunding/contract.py:91
+    // fund_amount = fund_pay.amount
+    frame_dig -1
+    gtxns Amount
+    // smart_contracts/charity_crowdfunding/contract.py:93
+    // assert Txn.sender.is_opted_in(Global.current_application_id)
+    txn Sender
+    global CurrentApplicationID
+    app_opted_in
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:94
+    // assert self.active == 1
+    int 0
+    byte "active"
+    app_global_get_ex
+    assert // check active exists
+    int 1
+    ==
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:95
+    // assert fund_amount >= self.min_donation
+    int 0
+    byte "min_donation"
+    app_global_get_ex
+    assert // check min_donation exists
+    dig 1
+    <=
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:96
+    // assert fund_pay.receiver == Global.current_application_address
+    frame_dig -1
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:97
+    // assert fund_pay.sender == Txn.sender
+    frame_dig -1
+    gtxns Sender
+    txn Sender
+    ==
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:99
+    // new_donation_amount = self.donator_info[Txn.sender] + fund_amount
+    txn Sender
+    int 0
+    byte "donator_info"
+    app_local_get_ex
+    assert // check donator_info exists for account
+    dig 1
+    +
+    // smart_contracts/charity_crowdfunding/contract.py:100
+    // self.donator_info[Txn.sender] = new_donation_amount
+    txn Sender
+    byte "donator_info"
+    uncover 2
+    app_local_put
+    // smart_contracts/charity_crowdfunding/contract.py:101
+    // self.donator_num += 1
+    int 0
+    byte "donator_num"
+    app_global_get_ex
+    assert // check donator_num exists
+    int 1
+    +
+    byte "donator_num"
+    swap
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:102
+    // self.fund_raised += fund_amount
+    int 0
+    byte "fund_raised"
+    app_global_get_ex
+    assert // check fund_raised exists
+    +
+    byte "fund_raised"
+    swap
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:104
+    // asset_holding = op.AssetHoldingGet.asset_balance(Txn.sender, self.reward_nft_id)
+    txn Sender
+    int 0
+    byte "reward_nft_id"
+    app_global_get_ex
+    assert // check reward_nft_id exists
+    asset_holding_get AssetBalance
+    // smart_contracts/charity_crowdfunding/contract.py:106
+    // if asset_holding[1]:
+    bz fund_after_if_else@5
+    // smart_contracts/charity_crowdfunding/contract.py:108
+    // if asa_balance == 0:
+    frame_dig 0
+    bnz fund_after_if_else@5
+    // smart_contracts/charity_crowdfunding/contract.py:109-114
+    // itxn.AssetTransfer(
+    //     xfer_asset=self.reward_nft_id,
+    //     asset_receiver=Txn.sender,
+    //     asset_amount=1,
+    //     fee=0,
+    // ).submit()
+    itxn_begin
+    // smart_contracts/charity_crowdfunding/contract.py:110
+    // xfer_asset=self.reward_nft_id,
+    int 0
+    byte "reward_nft_id"
+    app_global_get_ex
+    assert // check reward_nft_id exists
+    // smart_contracts/charity_crowdfunding/contract.py:111
+    // asset_receiver=Txn.sender,
+    txn Sender
+    // smart_contracts/charity_crowdfunding/contract.py:113
+    // fee=0,
+    int 0
+    itxn_field Fee
+    // smart_contracts/charity_crowdfunding/contract.py:112
+    // asset_amount=1,
+    int 1
+    itxn_field AssetAmount
+    itxn_field AssetReceiver
+    itxn_field XferAsset
+    // smart_contracts/charity_crowdfunding/contract.py:109
+    // itxn.AssetTransfer(
+    int axfer
+    itxn_field TypeEnum
+    // smart_contracts/charity_crowdfunding/contract.py:109-114
+    // itxn.AssetTransfer(
+    //     xfer_asset=self.reward_nft_id,
+    //     asset_receiver=Txn.sender,
+    //     asset_amount=1,
+    //     fee=0,
+    // ).submit()
+    itxn_submit
+
+fund_after_if_else@5:
+    retsub
+
+
+// smart_contracts.charity_crowdfunding.contract.CharityCrowdfunding.claim_fund() -> uint64:
+claim_fund:
+    // smart_contracts/charity_crowdfunding/contract.py:116-117
+    // @abimethod
+    // def claim_fund(self) -> UInt64:
+    proto 0 1
+    // smart_contracts/charity_crowdfunding/contract.py:118
+    // self._authorize_creator()
+    callsub _authorize_creator
+    // smart_contracts/charity_crowdfunding/contract.py:120
+    // fund_raised = self.fund_raised
+    int 0
+    byte "fund_raised"
+    app_global_get_ex
+    assert // check fund_raised exists
+    // smart_contracts/charity_crowdfunding/contract.py:122-126
+    // itxn.Payment(
+    //     receiver=Txn.sender,
+    //     amount=fund_raised,
+    //     fee=0,
+    // ).submit()
+    itxn_begin
+    // smart_contracts/charity_crowdfunding/contract.py:123
+    // receiver=Txn.sender,
+    txn Sender
+    // smart_contracts/charity_crowdfunding/contract.py:125
+    // fee=0,
+    int 0
+    itxn_field Fee
+    itxn_field Receiver
+    itxn_field Amount
+    // smart_contracts/charity_crowdfunding/contract.py:122
+    // itxn.Payment(
+    int pay
+    itxn_field TypeEnum
+    // smart_contracts/charity_crowdfunding/contract.py:122-126
+    // itxn.Payment(
+    //     receiver=Txn.sender,
+    //     amount=fund_raised,
+    //     fee=0,
+    // ).submit()
+    itxn_submit
+    // smart_contracts/charity_crowdfunding/contract.py:128
+    // self.active = UInt64(0)
+    byte "active"
+    int 0
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:129
+    // self.fund_raised = UInt64(0)
+    byte "fund_raised"
+    int 0
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:130
+    // return self.fund_raised
+    int 0
+    byte "fund_raised"
+    app_global_get_ex
+    assert // check fund_raised exists
+    retsub
+
+
+// smart_contracts.charity_crowdfunding.contract.CharityCrowdfunding.opt_in_to_app() -> void:
+opt_in_to_app:
+    // smart_contracts/charity_crowdfunding/contract.py:85-86
+    // @baremethod(allow_actions=["OptIn"])
+    // def opt_in_to_app(self) -> None:
+    proto 0 0
+    // smart_contracts/charity_crowdfunding/contract.py:87
+    // self.donator_info[Txn.sender] = UInt64(0)
+    txn Sender
+    byte "donator_info"
+    int 0
+    app_local_put
+    retsub
+
+
+// smart_contracts.charity_crowdfunding.contract.CharityCrowdfunding.delete_application() -> void:
+delete_application:
+    // smart_contracts/charity_crowdfunding/contract.py:132-133
+    // @baremethod(allow_actions=["DeleteApplication"])
+    // def delete_application(self) -> None:
+    proto 0 0
+    // smart_contracts/charity_crowdfunding/contract.py:134
+    // self._authorize_creator()
+    callsub _authorize_creator
+    // smart_contracts/charity_crowdfunding/contract.py:136
+    // assert self.active == 0
+    int 0
+    byte "active"
+    app_global_get_ex
+    assert // check active exists
+    !
+    assert
+    // smart_contracts/charity_crowdfunding/contract.py:137
+    // assert self.fund_raised == 0
+    int 0
+    byte "fund_raised"
+    app_global_get_ex
+    assert // check fund_raised exists
+    !
+    assert
+    retsub
+
+
+// smart_contracts.charity_crowdfunding.contract.CharityCrowdfunding.__init__() -> void:
+__init__:
+    // smart_contracts/charity_crowdfunding/contract.py:22
+    // def __init__(self) -> None:
+    proto 0 0
+    // smart_contracts/charity_crowdfunding/contract.py:23
+    // self.goal = UInt64()
+    byte "goal"
+    int 0
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:24
+    // self.detail = String()
+    byte "detail"
+    byte ""
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:25
+    // self.title = String()
+    byte "title"
+    byte ""
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:26
+    // self.fund_raised = UInt64()
+    byte "fund_raised"
+    int 0
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:27
+    // self.donator_num = UInt64()
+    byte "donator_num"
+    int 0
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:28
+    // self.min_donation = UInt64()
+    byte "min_donation"
+    int 0
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:29
+    // self.active = UInt64()
+    byte "active"
+    int 0
+    app_global_put
+    // smart_contracts/charity_crowdfunding/contract.py:30
+    // self.reward_nft_id = UInt64()
+    byte "reward_nft_id"
+    int 0
+    app_global_put
+    retsub
